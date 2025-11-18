@@ -1,0 +1,238 @@
+openapi: 3.0.3
+info:
+  title: Patient Service API
+  description: API for managing patient records
+  version: 1.0.0
+  contact:
+    name: PM Team
+    email: pm@example.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server
+
+paths:
+  /patients:
+    get:
+      summary: Get all patients
+      description: Retrieve a list of all registered patients
+      operationId: getPatients
+      tags:
+        - Patients
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PatientResponseDto'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Create a new patient
+      description: Register a new patient in the system
+      operationId: createPatient
+      tags:
+        - Patients
+      requestBody:
+        required: true
+        description: Patient data with all required fields including registration date
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientRequestDto'
+            examples:
+              createPatient:
+                summary: Example patient creation
+                value:
+                  name: "John Smith"
+                  email: "john.smith@example.com"
+                  address: "123 Main St, New York, NY"
+                  dateOfBirth: "1985-03-15"
+                  registeredDate: "2024-01-20"
+      responses:
+        '200':
+          description: Patient successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponseDto'
+              examples:
+                createdPatient:
+                  summary: Example created patient
+                  value:
+                    id: "123e4567-e89b-12d3-a456-426614174000"
+                    name: "John Smith"
+                    email: "john.smith@example.com"
+                    address: "123 Main St, New York, NY"
+                    dateOfBirth: "1985-03-15"
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /patients/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Unique identifier of the patient
+        schema:
+          type: string
+          format: uuid
+        example: "123e4567-e89b-12d3-a456-426614174000"
+
+    put:
+      summary: Update patient information
+      description: Update existing patient data
+      operationId: updatePatient
+      tags:
+        - Patients
+      requestBody:
+        required: true
+        description: Patient data to update (registeredDate not required for updates)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientRequestDto'
+            examples:
+              updatePatient:
+                summary: Example patient update
+                value:
+                  name: "John Smith Jr."
+                  email: "john.smith.jr@example.com"
+                  address: "456 Oak Ave, Boston, MA"
+                  dateOfBirth: "1985-03-15"
+      responses:
+        '200':
+          description: Patient successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponseDto'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete a patient
+      description: Remove a patient record from the system
+      operationId: deletePatient
+      tags:
+        - Patients
+      responses:
+        '204':
+          description: Patient successfully deleted
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    PatientRequestDto:
+      type: object
+      required:
+        - name
+        - email
+        - address
+        - dateOfBirth
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: Full name of the patient
+          example: "John Smith"
+        email:
+          type: string
+          format: email
+          description: Valid email address
+          example: "john.smith@example.com"
+        address:
+          type: string
+          description: Physical address of the patient
+          example: "123 Main St, New York, NY"
+        dateOfBirth:
+          type: string
+          description: Date of birth (format not specified)
+          example: "1985-03-15"
+        registeredDate:
+          type: string
+          description: Date when patient was registered (required only for creation)
+          example: "2024-01-20"
+      description: Data Transfer Object for creating or updating patients
+
+    PatientResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the patient
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          description: Full name of the patient
+          example: "John Smith"
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: "john.smith@example.com"
+        address:
+          type: string
+          description: Physical address
+          example: "123 Main St, New York, NY"
+        dateOfBirth:
+          type: string
+          description: Date of birth
+          example: "1985-03-15"
+      description: Data Transfer Object for patient responses
+
+    Error:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: When the error occurred
