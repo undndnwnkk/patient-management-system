@@ -4,6 +4,7 @@ import com.pm.patientservice.dto.PatientRequestDto;
 import com.pm.patientservice.dto.PatientResponseDto;
 import com.pm.patientservice.exception.EmailAlreadyExistsException;
 import com.pm.patientservice.exception.PatientNotFoundException;
+import com.pm.patientservice.grpc.BillingServiceGrpcClient;
 import com.pm.patientservice.mappper.PatientMapper;
 import com.pm.patientservice.model.Patient;
 import com.pm.patientservice.repository.PatientRepository;
@@ -18,6 +19,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PatientService {
     private final PatientRepository patientRepository;
+    private final BillingServiceGrpcClient  billingServiceGrpcClient;
 
     public List<PatientResponseDto> getPatients(){
         List<Patient> patients = patientRepository.findAll();
@@ -30,6 +32,13 @@ public class PatientService {
                     "already exists" + patientRequestDto.getEmail());
         }
         Patient newPatient = patientRepository.save(PatientMapper.toModel(patientRequestDto));
+
+        billingServiceGrpcClient.createBillingAccount(
+                newPatient.getId().toString(),
+                newPatient.getName(),
+                newPatient.getEmail()
+        );
+
         return PatientMapper.toDto(newPatient);
     }
 
