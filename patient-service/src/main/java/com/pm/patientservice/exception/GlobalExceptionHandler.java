@@ -37,4 +37,20 @@ public class GlobalExceptionHandler {
         errors.put("message", "Patient not found");
         return ResponseEntity.badRequest().body(errors);
     }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, String>> handleRuntimeException (RuntimeException ex){
+        log.error("Service error: {}", ex.getMessage(), ex);
+        Map<String, String> errors = new HashMap<>();
+
+        if (ex.getMessage().contains("billing")) {
+            errors.put("message", "Failed to create billing account. Please try again.");
+        } else if (ex.getMessage().contains("Kafka") || ex.getMessage().contains("event")) {
+            errors.put("message", "Failed to process patient event. Please try again.");
+        } else {
+            errors.put("message", "Internal server error. Please try again.");
+        }
+
+        return ResponseEntity.status(500).body(errors);
+    }
 }
