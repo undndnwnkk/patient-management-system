@@ -31,7 +31,6 @@ public class PatientService {
         return patients.stream().map(PatientMapper::toDto).toList();
     }
 
-    @Transactional
     public PatientResponseDto createPatient(PatientRequestDto patientRequestDto){
         if (patientRepository.existsByEmail(patientRequestDto.getEmail())) {
             throw new EmailAlreadyExistsException("A patient with this email " +
@@ -40,28 +39,17 @@ public class PatientService {
 
         Patient newPatient = patientRepository.save(PatientMapper.toModel(patientRequestDto));
 
-        try {
-            billingServiceGrpcClient.createBillingAccount(
-                    newPatient.getId().toString(),
-                    newPatient.getName(),
-                    newPatient.getEmail()
-            );
-        } catch (Exception e) {
-            log.error("Failed to create billing account for patient {}: {}", newPatient.getId(), e.getMessage());
-            throw new RuntimeException("Failed to create billing account", e);
-        }
+        billingServiceGrpcClient.createBillingAccount(
+                newPatient.getId().toString(),
+                newPatient.getName(),
+                newPatient.getEmail()
+        );
 
-        try {
-            kafkaProducer.sendEvent(newPatient);
-        } catch (Exception e) {
-            log.error("Failed to send Kafka event for patient {}: {}", newPatient.getId(), e.getMessage());
-            throw new RuntimeException("Failed to send patient event", e);
-        }
+        kafkaProducer.sendEvent(newPatient);
 
         return PatientMapper.toDto(newPatient);
     }
 
-    @Transactional
     public PatientResponseDto updatePatient(UUID id, PatientRequestDto patientRequestDto){
         Patient patient = patientRepository.findById(id).orElseThrow(
                 () -> new PatientNotFoundException("Patient not found with id " + id));
@@ -76,12 +64,6 @@ public class PatientService {
         patient.setEmail(patientRequestDto.getEmail());
         patient.setDateOfBirth(LocalDate.parse(patientRequestDto.getDateOfBirth()));
         Patient updatedPatient = patientRepository.save(patient);
-
-        try {
-            kafkaProducer.sendEvent(updatedPatient);
-        } catch (Exception e) {
-            log.warn("Failed to send Kafka event for updated patient {}: {}", updatedPatient.getId(), e.getMessage());
-        }
 
         return PatientMapper.toDto(updatedPatient);
     }
