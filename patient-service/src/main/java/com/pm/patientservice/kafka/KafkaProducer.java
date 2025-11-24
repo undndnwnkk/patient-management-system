@@ -23,9 +23,14 @@ public class KafkaProducer {
                 .build();
 
         try {
+            log.info("Sending Patient Event: [PatientId={}, PatientName={}, PatientEmail={}]",
+                    patientEvent.getPatientId(),
+                    patientEvent.getName(),
+                    patientEvent.getEmail());
             kafkaTemplate.send("patient", patientEvent.toByteArray());
+            log.info("Patient Event sent successfully");
         } catch (Exception e) {
-            log.error("Error sending PatientCreated even: {}", patientEvent);
+            log.error("Error sending PatientCreated event: {}", patientEvent, e);
         }
     }
 }
