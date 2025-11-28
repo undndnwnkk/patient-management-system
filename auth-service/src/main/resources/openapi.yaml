@@ -1,0 +1,70 @@
+openapi: 3.0.3
+info:
+  title: Auth Service API
+  version: 1.0.0
+  description: API для аутентификации и валидации JWT токена.
+paths:
+  /login:
+    post:
+      summary: Вход пользователя
+      description: Аутентификация пользователя по email и паролю с выдачей JWT токена.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestDto'
+      responses:
+        '200':
+          description: Успешная аутентификация, токен выдан.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponseDto'
+        '400':
+          description: Некорректные данные запроса (валидация email/пароля).
+        '401':
+          description: Неверные учетные данные.
+  /validate:
+    get:
+      summary: Валидация JWT токена
+      description: Проверка валидности JWT токена, переданного в заголовке Authorization.
+      operationId: validateToken
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          description: Заголовок авторизации в формате `Bearer {token}`.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Токен валиден.
+        '401':
+          description: Токен отсутствует, имеет неверный формат или невалиден.
+components:
+  schemas:
+    LoginRequestDto:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email пользователя.
+          example: user@example.com
+        password:
+          type: string
+          description: Пароль пользователя (не менее 8 символов).
+          minLength: 8
+          example: secret123
+    LoginResponseDto:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT токен доступа.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
